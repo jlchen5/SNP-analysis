@@ -24,9 +24,9 @@ vcftools --vcf U240707021F0_Het.vcf  --SNPdensity 100000 --out U240707021F0_Het_
 awk '{if ($3==0) print $0}' U240724001F0_chr10_Het.snpden
 ```
 
-## 苏州站点数据
+## 数据
 
-- vcf 文件路径：/data/biodata/analysis/LRS/stLFR/E150036213/result/U240520020F0/02.align/U240520020F0/alignsplit/*hetsnp.vcf
+- vcf 文件：`*hetsnp.vcf`
 
 ```
 E150036213
@@ -38,7 +38,7 @@ E150035532
 - steps
 
 ~~~
-cp /data/biodata/analysis/LRS/stLFR/E150035532/result/*/02.align/*/alignsplit/*hetsnp.vcf ./
+cp E150035532/result/*/02.align/*/alignsplit/*hetsnp.vcf ./
 
 ls *vcf |sed 's/.chr/\t/'  |awk '{print $1}'| sort -u |while read line ;do mkdir -p $line ;done 
 
@@ -50,14 +50,14 @@ sh ~/scripts/snpDensCalcu.sh
 ~~~
 
 
-## 给每个样本的snp加名字 sample_snp_NR
-
+## 给每个样本的snp加名字 `sample_snp_NR`
+```
 cat sample.txt | while read sample; do
   awk -v sample="$sample" 'BEGIN{FS=OFS="\t"} 
   NR==1 {print $0, "SNP_NAME"} 
   NR>1 {print $0, sample"_SNP_" NR-1}' "${sample}_ALL_Het.snpden" > "${sample}_ALL_Het_2.snpden"
 done
-
+```
 ## 基因组拆分
 
 ```
@@ -75,12 +75,12 @@ bedtools map -a hg19_10k_sorted.bed -b hg19_10k_anno_sorted.bed -c 4 -o distinct
 ```
 
 ## 计算每条染色体bins数目
-
+```
 for chr in {1..22} X Y; do
     echo -n "chr$chr: "
     awk -v chr="chr$chr" '$1 == chr' merged_snpden_anno.txt | wc -l
 done
-
+```
 
 ```
 chr1: 128750
@@ -164,8 +164,9 @@ chr1	80000	90000	.	F	T
 # 新增千人基因组样本信息
 
 ### 统计样本名
-(base) jialechen ~/projects/snpDensity/kiloGP $ bcftools query -l  ALL.chr13.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz >      sample.txt
-
+```bash
+ bcftools query -l  ALL.chr13.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz >      sample.txt
+```
 
 ### 拆分多样本 VCF 文件 (/home/jialechen/projects/snpDensity/kiloGP/parallel_split_vcf.sh)
 
