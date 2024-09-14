@@ -174,7 +174,7 @@ chr1	80000	90000	.	F	T
 cat sample.txt | while read id; do
     mkdir -p $id
     for vcf in ALL.chr*.vcf.gz; do
-        bcftools view -s $id -o $id/${id}_${vcf%.vcf.gz}.vcf -O v $vcf
+        bcftools view -s $id -o $id/${id}_${vcf%.vcf.gz}.vcf.gz -O v $vcf
     done
 done
 ```
