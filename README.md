@@ -179,6 +179,11 @@ cat sample.txt | while read id; do
 done
 ```
 
+# 绘制SNP密度结果
+
+
+
+
 
 
 
