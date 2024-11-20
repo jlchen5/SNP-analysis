@@ -186,6 +186,12 @@ done
 
 
 
+###
+其他可能需要的文件：https://github.com/jlchen5/SNP-analysis/blob/main/data/1
+
+
+
+
 
 
 
