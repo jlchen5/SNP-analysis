@@ -180,6 +180,7 @@ done
 ```
 
 # 绘制SNP密度结果
+使用[plot_violin.R](https://github.com/jlchen5/SNP-analysis/blob/main/plot_violin.R)脚本，可以绘制位点上下游100kb的SNP密度。
 
 
 
