@@ -14,8 +14,10 @@ $ zcat U240707021F0.vcf.gz  |awk '$10 ~ /^0\/1/ || $10 ~ /^1\/2/ ' > U240707021F
 
 ## 3 计算vcf中SNP的密度
 
-```
-vcftools --vcf U240707021F0_Het.vcf  --SNPdensity 100000 --out U240707021F0_Het_Dens
+```bash
+vcftools --vcf U240707021F0_Het.vcf  \
+         --SNPdensity 100000 \
+         --out U240707021F0_Het_Dens \ 
 ```
 
 ## 4 输出SNP密度为0的结果
@@ -28,7 +30,7 @@ awk '{if ($3==0) print $0}' U240724001F0_chr10_Het.snpden
 
 - vcf 文件：`*hetsnp.vcf`
 
-```
+```bash
 E150036213
 E150028967
 E150035507
@@ -51,7 +53,7 @@ sh ~/scripts/snpDensCalcu.sh
 
 
 ## 给每个样本的snp加名字 `sample_snp_NR`
-```
+```bash
 cat sample.txt | while read sample; do
   awk -v sample="$sample" 'BEGIN{FS=OFS="\t"} 
   NR==1 {print $0, "SNP_NAME"} 
@@ -60,29 +62,37 @@ done
 ```
 ## 基因组拆分
 
-```
-bedtools makewindows -g ~/library/hg19/hg19.chrom.sizes_24  -w 10000  > hg19_10k.bed
+```bash
+bedtools makewindows -g ~/library/hg19/hg19.chrom.sizes_24 \
+                     -w 10000 \
+                     > hg19_10k.bed
 ```
 
 ## 添加注释信息
 
-```
-bedtools intersect -a hg19_gene.bed -b hg19_10k.bed  -wb  |awk '{print $9"\t"$10"\t"$11"\t"$8}'  |sed 's/"//g'   > hg19_10k_anno.bed
+```bash
+bedtools intersect -a hg19_gene.bed
+                   -b hg19_10k.bed
+                   -wb  | awk '{print $9"\t"$10"\t"$11"\t"$8}'  |sed 's/"//g'   > hg19_10k_anno.bed
 
 cat hg19_10k_anno.bed |sort -k1,1 -k2,2n > hg19_10k_anno_sorted.bed
 
-bedtools map -a hg19_10k_sorted.bed -b hg19_10k_anno_sorted.bed -c 4 -o distinct > hg19_10k_with_genes.bed
+bedtools map -a hg19_10k_sorted.bed \ 
+             -b hg19_10k_anno_sorted.bed \ 
+             -c 4 \ 
+             -o distinct \ 
+              > hg19_10k_with_genes.bed
 ```
 
 ## 计算每条染色体bins数目
-```
+```bash
 for chr in {1..22} X Y; do
     echo -n "chr$chr: "
     awk -v chr="chr$chr" '$1 == chr' merged_snpden_anno.txt | wc -l
 done
 ```
 
-```
+```bash
 chr1: 128750
 chr2: 40567
 chr3: 19803
