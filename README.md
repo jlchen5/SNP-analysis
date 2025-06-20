@@ -1,58 +1,52 @@
-# SNP-analysis
+# SNP Analysis Workflow
 
-## 1 筛选vcf文件中纯合（homozygous）位点：
+## File Processing
 
+### 1. Filtering VCF Files
+
+#### Homozygous Variants
 ```bash
-$ zcat U240707021F0.vcf.gz  |awk '$10 ~ /^0\/0/ || $10 ~ /^1\/1/ || $10 ~ /^2\/2/' > U240707021F0_Hom.vcf
+zcat U240707021F0.vcf.gz | awk '$10 ~ /^0\/0/ || $10 ~ /^1\/1/ || $10 ~ /^2\/2/' > U240707021F0_Hom.vcf
 ```
 
-## 2 筛选vcf文件中杂合（heterozygous）位点：
-
+#### Heterozygous Variants
 ```bash
-$ zcat U240707021F0.vcf.gz  |awk '$10 ~ /^0\/1/ || $10 ~ /^1\/2/ ' > U240707021F0_Het.vcf
+zcat U240707021F0.vcf.gz | awk '$10 ~ /^0\/1/ || $10 ~ /^1\/2/' > U240707021F0_Het.vcf
 ```
 
-## 3 计算vcf中SNP的密度
-
+### 2. Calculating SNP Density
 ```bash
-vcftools --vcf U240707021F0_Het.vcf  \
+vcftools --vcf U240707021F0_Het.vcf \
          --SNPdensity 100000 \
-         --out U240707021F0_Het_Dens \ 
+         --out U240707021F0_Het_Dens
 ```
 
-## 4 输出SNP密度为0的结果
-
+### 3. Extracting Zero-Density Regions
 ```bash
 awk '{if ($3==0) print $0}' U240724001F0_chr10_Het.snpden
 ```
 
-## 5 数据
+## Data Organization
 
-- vcf 文件：`*hetsnp.vcf`
-
+### Sample Processing Steps
 ```bash
-E150036213
-E150028967
-E150035507
-E150035532
-```
-
-- steps
-
-~~~
+# Copy files
 cp E150035532/result/*/02.align/*/alignsplit/*hetsnp.vcf ./
 
-ls *vcf |sed 's/.chr/\t/'  |awk '{print $1}'| sort -u |while read line ;do mkdir -p $line ;done 
+# Create sample directories
+ls *vcf | sed 's/.chr/\t/' | awk '{print $1}' | sort -u | while read line; do mkdir -p $line; done
 
-ls *vcf |sed 's/.chr/\t/'  |awk '{print $1}'| sort -u  > sample.txt
+# Create sample list
+ls *vcf | sed 's/.chr/\t/' | awk '{print $1}' | sort -u > sample.txt
 
-cat sample.txt  |while read line ;do mv  $line.chr*vcf $line/ ;done 
+# Move files to sample directories
+cat sample.txt | while read line; do mv $line.chr*vcf $line/; done
 
-sh ~/scripts/snpDensCalcu.sh 
-~~~
+# Calculate SNP density
+sh ~/scripts/snpDensCalcu.sh
+```
 
-
-## 6 给每个样本的snp加名字 `sample_snp_NR`
+### 4. Adding Sample Names to SNP IDs
 ```bash
 cat sample.txt | while read sample; do
   awk -v sample="$sample" 'BEGIN{FS=OFS="\t"} 
@@ -60,31 +54,34 @@ cat sample.txt | while read sample; do
   NR>1 {print $0, sample"_SNP_" NR-1}' "${sample}_ALL_Het.snpden" > "${sample}_ALL_Het_2.snpden"
 done
 ```
-## 7 基因组拆分
 
+## Genomic Analysis
+
+### 5. Genome Binning
 ```bash
 bedtools makewindows -g ~/library/hg19/hg19.chrom.sizes_24 \
                      -w 10000 \
                      > hg19_10k.bed
 ```
 
-## 8 添加注释信息
-
+### 6. Adding Gene Annotations
 ```bash
-bedtools intersect -a hg19_gene.bed
-                   -b hg19_10k.bed
-                   -wb  | awk '{print $9"\t"$10"\t"$11"\t"$8}'  |sed 's/"//g'   > hg19_10k_anno.bed
+# Create annotated bed file
+bedtools intersect -a hg19_gene.bed \
+                   -b hg19_10k.bed \
+                   -wb | awk '{print $9"\t"$10"\t"$11"\t"$8}' | sed 's/"//g' > hg19_10k_anno.bed
 
-cat hg19_10k_anno.bed |sort -k1,1 -k2,2n > hg19_10k_anno_sorted.bed
+# Sort and map annotations
+cat hg19_10k_anno.bed | sort -k1,1 -k2,2n > hg19_10k_anno_sorted.bed
 
 bedtools map -a hg19_10k_sorted.bed \ 
              -b hg19_10k_anno_sorted.bed \ 
              -c 4 \ 
              -o distinct \ 
-              > hg19_10k_with_genes.bed
+             > hg19_10k_with_genes.bed
 ```
 
-## 9 计算每条染色体bins数目
+### 7. Chromosome Bin Counts
 ```bash
 for chr in {1..22} X Y; do
     echo -n "chr$chr: "
@@ -92,7 +89,8 @@ for chr in {1..22} X Y; do
 done
 ```
 
-```bash
+**Results:**
+```
 chr1: 128750
 chr2: 40567
 chr3: 19803
@@ -117,69 +115,51 @@ chr21: 4813
 chr22: 5131
 chrX: 15528
 chrY: 5938
-
 ```
 
+## Additional Annotations
 
+### 8. Gap and Duplication Regions
 
-
-
-# 新增是否重复区，是否N区
-
-### 计算与 hg19_gap.bed 的交集：
-
-```
+#### Calculate overlaps:
+```bash
+# Gap regions
 bedtools intersect -a hg19_10k_with_genes.bed -b hg19_gap.bed -c > hg19_10k_with_genes_with_gap.bed
-```
 
-### 计算与 hg19_seqdup.bed 的交集：
-
-```
+# Duplication regions
 bedtools intersect -a hg19_10k_with_genes.bed -b hg19_seqdup.bed -c > hg19_10k_with_genes_with_dup.bed
 ```
 
-### 合并交集结果并添加 gap 和 dup 列：
-
-```
+#### Merge results:
+```bash
 paste hg19_10k_with_genes_with_gap.bed hg19_10k_with_genes_with_dup.bed | \
 awk 'BEGIN {OFS="\t"} {print $1, $2, $3, $4, ($5 > 0 ? "T" : "F"), ($10 > 0 ? "T" : "F")}' > hg19_10k_with_genes_with_gap_dup.bed
 ```
 
-### 清理临时文件（可选）：
-
-```
-rm hg19_10k_with_genes_with_gap.bed hg19_10k_with_genes_with_dup.bed
-```
-
-### 添加标题
-
+#### Add headers:
 ```bash
-sed -i '1s/^/chrom\tstart\tend\tgene\tIF_GAP\tIF_DUP\n/' hg19_10k_with_genes_with_gap_dup.bed 
+sed -i '1s/^/chrom\tstart\tend\tgene\tIF_GAP\tIF_DUP\n/' hg19_10k_with_genes_with_gap_dup.bed
+```
 
-(base) jialechen ~/library/hg19 $ head hg19_10k_with_genes_with_gap_dup.bed 
+**Example output:**
+```
 chrom	start	end	gene	IF_GAP	IF_DUP
 chr1	0	10000	.	T	F
 chr1	10000	20000	DDX11L1,MIR6859-1,WASH7P	F	T
 chr1	20000	30000	WASH7P	F	T
-chr1	30000	40000	FAM138A,MIR1302-2	F	T
-chr1	40000	50000	.	F	T
-chr1	50000	60000	OR4G4P	F	T
-chr1	60000	70000	OR4F5,OR4G11P	F	T
-chr1	70000	80000	OR4F5	F	T
-chr1	80000	90000	.	F	T
+...
 ```
 
+## 1000 Genomes Project Data
 
+### 9. Sample Processing
 
-# 新增千人基因组样本信息
-
-### 统计样本名
+#### Extract sample names:
 ```bash
- bcftools query -l  ALL.chr13.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz >      sample.txt
+bcftools query -l ALL.chr13.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz > sample.txt
 ```
 
-### 拆分多样本 VCF 文件 (/home/jialechen/projects/snpDensity/kiloGP/parallel_split_vcf.sh)
-
+#### Split multi-sample VCFs:
 ```bash
 cat sample.txt | while read id; do
     mkdir -p $id
@@ -189,11 +169,13 @@ cat sample.txt | while read id; do
 done
 ```
 
-# 绘制SNP密度结果
-使用[plot_violin.R](https://github.com/jlchen5/SNP-analysis/blob/main/plot_violin.R)脚本，可以绘制位点上下游100kb的SNP密度。
+## Visualization
 
+### 10. SNP Density Plotting
 
-###
-其他可能需要的文件：https://github.com/jlchen5/SNP-analysis/blob/main/data/1
+Use the [plot_violin.R](https://github.com/jlchen5/SNP-analysis/blob/main/plot_violin.R) script to visualize SNP density in 100kb upstream/downstream regions.
 
+## Supplementary Data
 
+Additional required files available at:  
+https://github.com/jlchen5/SNP-analysis/blob/main/data/1
