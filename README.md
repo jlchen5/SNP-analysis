@@ -26,7 +26,7 @@ vcftools --vcf U240707021F0_Het.vcf  \
 awk '{if ($3==0) print $0}' U240724001F0_chr10_Het.snpden
 ```
 
-## 数据
+## 5 数据
 
 - vcf 文件：`*hetsnp.vcf`
 
@@ -52,7 +52,7 @@ sh ~/scripts/snpDensCalcu.sh
 ~~~
 
 
-## 给每个样本的snp加名字 `sample_snp_NR`
+## 6 给每个样本的snp加名字 `sample_snp_NR`
 ```bash
 cat sample.txt | while read sample; do
   awk -v sample="$sample" 'BEGIN{FS=OFS="\t"} 
@@ -60,7 +60,7 @@ cat sample.txt | while read sample; do
   NR>1 {print $0, sample"_SNP_" NR-1}' "${sample}_ALL_Het.snpden" > "${sample}_ALL_Het_2.snpden"
 done
 ```
-## 基因组拆分
+## 7 基因组拆分
 
 ```bash
 bedtools makewindows -g ~/library/hg19/hg19.chrom.sizes_24 \
@@ -68,7 +68,7 @@ bedtools makewindows -g ~/library/hg19/hg19.chrom.sizes_24 \
                      > hg19_10k.bed
 ```
 
-## 添加注释信息
+## 8 添加注释信息
 
 ```bash
 bedtools intersect -a hg19_gene.bed
@@ -84,7 +84,7 @@ bedtools map -a hg19_10k_sorted.bed \
               > hg19_10k_with_genes.bed
 ```
 
-## 计算每条染色体bins数目
+## 9 计算每条染色体bins数目
 ```bash
 for chr in {1..22} X Y; do
     echo -n "chr$chr: "
@@ -193,16 +193,7 @@ done
 使用[plot_violin.R](https://github.com/jlchen5/SNP-analysis/blob/main/plot_violin.R)脚本，可以绘制位点上下游100kb的SNP密度。
 
 
-
-
-
 ###
 其他可能需要的文件：https://github.com/jlchen5/SNP-analysis/blob/main/data/1
-
-
-
-
-
-
 
 
